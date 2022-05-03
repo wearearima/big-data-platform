@@ -60,6 +60,7 @@ For testing purposes, we will create an unsecured Minio server pool with 2 serve
 [Additional deployment guidelines](https://docs.min.io/minio/baremetal/installation/deploy-minio-distributed.html#id5)
 
 Configure the Minio cluster as shown in the pictures. Additionally, you may disable audit logs and monitoring to save resources.
+
 ---
 ![minio-config-1](img/minio-config-1.png "Minio basic config")
 ---
@@ -274,7 +275,7 @@ Install Argo on its own namespace, following the quickstart from [here](https://
 
 ```
 kubectl create ns argo
-kubectl apply -n argo -f argo-quick-start.yaml
+kubectl apply -n argo -f argo.yaml
 ```
 
 Create an admin 
