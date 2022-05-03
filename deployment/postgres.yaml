@@ -1,0 +1,56 @@
+apiVersion: kubegres.reactive-tech.io/v1
+kind: Kubegres
+metadata:
+  name: postgres
+
+spec:
+  replicas: 3
+  image: postgres:14.1
+
+  database:
+    size: 10Gi
+  
+  customConfig: postgres-init
+
+  env:
+    - name: POSTGRES_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: superuserPassword
+    - name: POSTGRES_REPLICATION_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: superuserReplicaPassword
+    - name: HMS_USER
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: hmsUser 
+    - name: HMS_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: hmsPassword
+    - name: DATA_USER
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: dataUser 
+    - name: DATA_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: dataPassword
+    - name: SUPERSET_USER
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: supersetUser 
+    - name: SUPERSET_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: postgres-secret
+          key: supersetPassword
+    

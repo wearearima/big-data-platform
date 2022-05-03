@@ -1,0 +1,268 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: weather-data-
+spec:
+  entrypoint: main
+  # hen runninng 'argo submit', these parameters can be overridden
+  # -p start-decade=175 -p end-decade=202
+  arguments:
+    parameters:
+      - name: start-decade
+        value: 176
+      - name: end-decade
+        value: 179
+
+  templates:
+  - name: main
+    dag:
+      tasks:
+      - name: create-bucket
+        template: create-temp-bucket
+      - name: get-weather-data
+        template: download-weather-data
+        dependencies: 
+          - create-bucket
+        arguments:
+          parameters:
+          - name: decade
+            value: "{{item}}"
+        withSequence:
+          start: "{{ workflow.parameters.start-decade}}"
+          end: "{{ workflow.parameters.end-decade}}"
+      - name: get-station-data
+        template: download-station-data
+        dependencies: 
+          - create-bucket
+      - name: reduce-data
+        dependencies:
+          - get-weather-data
+        template: reduce
+      - name: send-to-postgres
+        dependencies:
+          - reduce-data
+        template: to-postgres
+      - name: send-to-postgres2
+        dependencies:
+          - get-station-data
+        template: to-postgres2
+      - name: delete-bucket
+        template: delete-temp-bucket
+        dependencies:
+          - send-to-postgres
+          - send-to-postgres2
+
+
+  # TO DO: can I config minio just once?
+
+  # these templates create and delete a temporary minio bucket to store
+  # the downloaded artifacts 
+  - name: create-temp-bucket
+    script:
+      image: minio/mc 
+      command: [sh]
+      source: |
+        echo "setting up credentials..."
+        mc alias set myminio http://minio.minio:80 minio123 minio123
+        echo "creating bucket..."
+        mc mb myminio/{{ workflow.name }}
+  - name: delete-temp-bucket
+    script:
+      image: minio/mc 
+      command: [sh]
+      source: |
+        mc alias set myminio http://minio.minio:80 minio123 minio123
+        mc rb myminio/{{ workflow.name }} --force 
+
+
+  # Downloads the given decade in a compressed folder in minio
+  - name: download-weather-data
+    inputs:
+      parameters:
+      - name: decade
+    script:
+      image: danasca/aws-cli
+      command: [bash]
+      source: |
+        aws s3 sync --no-sign-request s3://noaa-ghcn-pds/csv.gz/ /tmp/weather-data/ --exclude "*"  --include "{{ inputs.parameters.decade }}*.csv.gz"
+        gzip -d /tmp/weather-data/*.csv.gz
+    outputs:
+      artifacts:
+      - name: downloaded-data 
+        path: /tmp/weather-data
+        s3:
+          endpoint: minio.minio:80
+          # using tls
+          insecure: true
+          bucket: "{{ workflow.name }}"
+          key: "{{workflow.name}}/{{ inputs.parameters.decade }}.tgz"
+          accessKeySecret:
+            name: minio-secret
+            key: user
+          secretKeySecret:
+            name: minio-secret
+            key: password
+
+  # Downloads weather station info
+  - name: download-station-data
+    script:
+      image: danasca/aws-cli
+      imagePullPolicy: Always
+      command: [bash]
+      source: |
+        aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-stations.txt"
+        aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-countries.txt"
+    outputs:
+      artifacts:
+      - name: downloaded-data 
+        path: /tmp/weather-data
+        s3:
+          endpoint: minio.minio:80
+          # using tls
+          insecure: true
+          bucket: "{{ workflow.name }}"
+          key: "{{ workflow.name }}/station-data.tgz"
+          accessKeySecret:
+            name: minio-secret
+            key: user
+          secretKeySecret:
+            name: minio-secret
+            key: password
+
+  
+  # Reads all downloaded data and puts all csv files together
+  - name: reduce
+    inputs:
+      artifacts:
+        - name: downloaded-data
+          path: /tmp/downloaded-data
+          s3:
+            endpoint: minio.minio:80
+            insecure: true
+            bucket: "{{workflow.name}}"
+            key: "{{workflow.name}}"
+            accessKeySecret:
+              name: minio-secret
+              key: user
+            secretKeySecret:
+              name: minio-secret
+              key: password
+    script:
+      image: danasca/aws-cli
+      imagePullPolicy: Always
+      command: [bash]
+      source: |
+        mkdir /tmp/weather-data
+        for f in /tmp/downloaded-data/*.tgz; do tar -xvf $f --directory /tmp/weather-data/; cp /tmp/weather-data/weather-data/*.csv /tmp/weather-data/; done
+        rm -r /tmp/weather-data/weather-data
+    outputs:
+      artifacts:
+        - name: downloaded-data 
+          path: /tmp/weather-data
+          s3:
+            endpoint: minio.minio:80
+            # using tls
+            insecure: true
+            bucket: "{{workflow.name}}"
+            key: "{{workflow.name}}/final-data/weather-data.tgz"
+            accessKeySecret:
+              name: minio-secret
+              key: user
+            secretKeySecret:
+              name: minio-secret
+              key: password
+
+  # Sends weather data to postgres
+  - name: to-postgres
+    inputs:
+      artifacts:
+        - name: weather-data
+          path: /tmp/weather-data
+          s3:
+            endpoint: minio.minio:80
+            insecure: true
+            bucket: "{{ workflow.name }}"
+            key: "{{ workflow.name }}/final-data/weather-data.tgz"
+            accessKeySecret:
+              name: minio-secret
+              key: user
+            secretKeySecret:
+              name: minio-secret
+              key: password
+        - name: station-data
+          path: /tmp/station-data
+          s3:
+            endpoint: minio.minio:80
+            insecure: true
+            bucket: "{{ workflow.name }}"
+            key: "{{workflow.name}}/station-data.tgz"
+            accessKeySecret:
+              name: minio-secret
+              key: user
+            secretKeySecret:
+              name: minio-secret
+              key: password
+    script:
+      image: postgres:14.2
+      command: [bash]
+      source: |
+        psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS weather_data (
+        id VARCHAR(11),
+        date DATE,
+        element VARCHAR(4),
+        value INTEGER,
+        measurementFlag VARCHAR(1),
+        qualityFlag VARCHAR(1),
+        sourceFlag VARCHAR(1),
+        obsTime VARCHAR(4)
+        );"
+
+        for year in $(ls /tmp/weather-data/*.csv)
+        do 
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy weather_data 
+          FROM '$year'
+          WITH CSV;"
+        done 
+  
+  # Sends station info to postgres   
+  - name: to-postgres2
+    inputs:
+      artifacts:
+        - name: station-data
+          path: /tmp/station-data
+          s3:
+            endpoint: minio.minio:80
+            insecure: true
+            bucket: "{{ workflow.name }}"
+            key: "{{workflow.name}}/station-data.tgz"
+            accessKeySecret:
+              name: minio-secret
+              key: user
+            secretKeySecret:
+              name: minio-secret
+              key: password
+    script:
+      image: postgres:14.2
+      command: [bash]
+      source: |
+        psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS stations (
+        id VARCHAR(11),
+        lat REAL,
+        lon REAL,
+        elevation REAL,
+        state VARCHAR(2),
+        name VARCHAR(30)
+        );" -c "CREATE TABLE IF NOT EXISTS countries (
+        id VARCHAR(2),
+        name VARCHAR(255));"
+
+        cut -c1-11,13-20,22-30,32-37,39-40,42-71 --output-delimiter='%' /tmp/station-data/ghcnd-stations.txt >stations.csv
+        cut -c1-2,4- --output-delimiter=";" /tmp/station-data/ghcnd-countries.txt >countries.csv
+
+        psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy stations 
+        FROM 'stations.csv'
+        DELIMITER '%';" -c "\copy countries from countries.csv
+        DELIMITER ';';"
+
+
+

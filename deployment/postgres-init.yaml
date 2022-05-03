@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+
+data:
+  primary_init_script.sh: |
+    #!/bin/bash
+    set -e
+
+    dt=$(date '+%d/%m/%Y %H:%M:%S');
+    echo "$dt - Running init script the 1st time Primary PostgreSql container is created...";
+
+
+    echo "$dt - Running: psql -v ON_ERROR_STOP=1 --username $POSTGRES_USER --dbname $POSTGRES_DB ...";
+
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE USER $SUPERSET_USER WITH PASSWORD '$SUPERSET_PASSWORD';
+    CREATE USER $HMS_USER WITH PASSWORD '$HMS_PASSWORD';
+    CREATE USER $DATA_USER WITH PASSWORD '$DATA_PASSWORD';
+
+    CREATE DATABASE superset;
+    GRANT ALL PRIVILEGES ON DATABASE superset to $SUPERSET_USER;
+    
+    CREATE DATABASE hivemetastore;
+    GRANT ALL PRIVILEGES ON DATABASE hivemetastore to $HMS_USER;
+    
+    CREATE DATABASE data;
+    GRANT ALL PRIVILEGES ON DATABASE data to $DATA_USER;
+    EOSQL
+
+    echo "$dt - Init script is completed";
+                    
