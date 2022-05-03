@@ -14,6 +14,8 @@ spec:
         value: 179
   templates:
   - name: main
+    # a maximum of 5 jobs will run concurrently
+    parallelism: 5 
     dag:
       tasks:
       - name: get-weather-data
