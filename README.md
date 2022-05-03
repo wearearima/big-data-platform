@@ -25,6 +25,6 @@ A Big Data platform running on Kubernetes.
 
 See the `deployment` folder for instructions on how to install the tools on a Kubernetes cluster.
 
-See the `data-project` folder for instructions on how to test the tool by loading some data.
+See the `data-project` folder for instructions on how to test the tools by loading some data.
 
 

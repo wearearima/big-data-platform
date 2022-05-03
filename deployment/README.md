@@ -153,7 +153,7 @@ kubectl delete kubegres postgres
 
 First create the following ConfigMaps, that store configuration information for Hive Metastore.
 
-** TO DO: No sé si tendrían que ser secretos, porque tienen las contraseñas de postgres y de minio. La otra opción sería crear imágenes con variables de entorno, y generar estos ficheros con las contraseñas, etc. al iniciar el contenedor**
+**TO DO: No sé si tendrían que ser secretos, porque tienen las contraseñas de postgres y de minio. La otra opción sería crear imágenes con variables de entorno, y generar estos ficheros con las contraseñas, etc. al iniciar el contenedor**
 
 ```
 kubectl apply -f hive-metastore-core-config.yaml 
