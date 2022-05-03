@@ -49,9 +49,46 @@ select * from postgres.public.weather_data limit 10;
 select * from postgres.public.stations limit 10;
 ```
 
-Create a table filtering only precipitation data
+Create a table filtering only precipitation data.
 
 ```
 create table precipitations as 
 select (id, date, value) from postgres.public.weather_data where ELEMENT='PRCP';
 ```
+
+Or store temperatures by filtering min and max values, and converting value column to degree Celsius.
+```
+create table temperatures as
+select id, date, element, cast(value as real)/10.0 as temperature FROM
+weather_data where element in ('TMIN', 'TMAX');
+```
+
+
+## Accessing the data through Superset
+
+Port-forward the Superset service, and access with credentials "admin"/"admin".
+
+```
+kubectl port-forward service/superset 8088:8088 -n superset
+```
+
+Add the database and all the tables to Superset through the UI (see Deployment for more detailed instructions):
+
+![superset-postgres](img/superset-connect-to-postgres.png "postgres-connection-through-trino")
+![add-datasets](img/superset-add-datasets.png "superset-add-datasets")
+
+
+Once the tables are loaded, clicking on them will take you to the Explore page, where you can create tables and graphs (Charts) to populate your Dashboards.
+
+You can also use SQL Lab to run queries the same way you would run them through the Trino CLI, but **omitting the catalog name**.
+
+If the website fails, check that the port-forward is still running.
+
+
+![example-dashboard](img/example-dashboard.png "superset-example-dashboard")
+
+
+
+
+
+

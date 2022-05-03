@@ -73,7 +73,7 @@ Once the minio deployment is ready, you can stop the proxy for the operator.
 ![minio-ready](img/minio-ready.png "Minio is ready")
 
 
-This Minio tenant can be removed by deleting its namespace (`kubectl delete ns minio`).
+This Minio tenant can be removed through the operator or by deleting its namespace (`kubectl delete ns minio`).
 
 
 #### Access Minio
@@ -89,6 +89,8 @@ kubectl port-forward -n minio minio-pool-0-0 9090:9090
 ```
 
 From localhost:9090 you can manage buckets, users, etc.
+
+Alternatively, all minio tenants can be managed from the Minio operator directly.
 
 **TO DO:  Configure Ingress for this and other services?**
 
@@ -324,6 +326,8 @@ kubectl create ns superset
 helm repo add superset https://apache.github.io/superset
 helm upgrade --install --values superset-values.yaml -n superset superset superset/superset
 ```
+
+Even if you get a message saying "Error: failed post-install: timed out waiting for the condition", Superset will get installed eventually.
 
 #### Access and connect to databases 
 
