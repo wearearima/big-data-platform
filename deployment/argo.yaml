@@ -1154,27 +1154,27 @@ data:
   default-v1: |
     archiveLogs: true
     s3:
-      bucket: my-bucket
-      endpoint: minio:9000
+      bucket: argo-workflows
+      endpoint: minio.minio:80
       insecure: true
       accessKeySecret:
-        name: my-minio-cred
+        name: minio-secret
         key: accesskey
       secretKeySecret:
-        name: my-minio-cred
+        name: minio-secret
         key: secretkey
   empty: ""
   my-key: |
     archiveLogs: true
     s3:
-      bucket: my-bucket
-      endpoint: minio:9000
+      bucket: argo-workflows
+      endpoint: minio.minio:80
       insecure: true
       accessKeySecret:
-        name: my-minio-cred
+        name: minio-secret
         key: accesskey
       secretKeySecret:
-        name: my-minio-cred
+        name: minio-secret
         key: secretkey
 kind: ConfigMap
 metadata:
@@ -1186,14 +1186,14 @@ apiVersion: v1
 data:
   artifactRepository: |
     s3:
-      bucket: my-bucket
-      endpoint: minio:9000
+      bucket: argo-workflows
+      endpoint: minio.minio:80
       insecure: true
       accessKeySecret:
-        name: my-minio-cred
+        name: minio-secret
         key: accesskey
       secretKeySecret:
-        name: my-minio-cred
+        name: minio-secret
         key: secretkey
   executor: |
     resources:
@@ -1233,7 +1233,7 @@ data:
     archive: true
     archiveTTL: 7d
     postgresql:
-      host: postgres
+      host: postgres.default
       port: 5432
       database: postgres
       tableName: argo_workflows
@@ -1258,7 +1258,7 @@ metadata:
     app: postgres
   name: argo-postgres-config
 stringData:
-  password: password
+  password: "12345"
   username: postgres
 type: Opaque
 ---
@@ -1293,10 +1293,10 @@ kind: Secret
 metadata:
   labels:
     app: minio
-  name: my-minio-cred
+  name: minio-secret
 stringData:
-  accesskey: admin
-  secretkey: password
+  accesskey: minio123
+  secretkey: minio123
 type: Opaque
 ---
 apiVersion: v1
@@ -1310,39 +1310,6 @@ spec:
     targetPort: 2746
   selector:
     app: argo-server
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: minio
-  name: minio
-spec:
-  ports:
-  - name: api
-    port: 9000
-    protocol: TCP
-    targetPort: 9000
-  - name: dashboard
-    port: 9001
-    protocol: TCP
-    targetPort: 9001
-  selector:
-    app: minio
----
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: postgres
-  name: postgres
-spec:
-  ports:
-  - port: 5432
-    protocol: TCP
-    targetPort: 5432
-  selector:
-    app: postgres
 ---
 apiVersion: v1
 kind: Service
@@ -1426,97 +1393,6 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  labels:
-    app: minio
-  name: minio
-spec:
-  selector:
-    matchLabels:
-      app: minio
-  template:
-    metadata:
-      labels:
-        app: minio
-    spec:
-      containers:
-      - command:
-        - minio
-        - server
-        - --console-address
-        - :9001
-        - /data
-        env:
-        - name: MINIO_ACCESS_KEY
-          value: admin
-        - name: MINIO_SECRET_KEY
-          value: password
-        image: minio/minio
-        lifecycle:
-          postStart:
-            exec:
-              command:
-              - mkdir
-              - -p
-              - /data/my-bucket
-        livenessProbe:
-          httpGet:
-            path: /minio/health/live
-            port: 9000
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        name: main
-        ports:
-        - containerPort: 9000
-          name: api
-        - containerPort: 9001
-          name: dashboard
-        readinessProbe:
-          httpGet:
-            path: /minio/health/ready
-            port: 9000
-          initialDelaySeconds: 5
-          periodSeconds: 10
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  labels:
-    app: postgres
-  name: postgres
-spec:
-  selector:
-    matchLabels:
-      app: postgres
-  template:
-    metadata:
-      labels:
-        app: postgres
-      name: postgres
-    spec:
-      containers:
-      - env:
-        - name: POSTGRES_PASSWORD
-          value: password
-        image: postgres:12-alpine
-        name: main
-        ports:
-        - containerPort: 5432
-        readinessProbe:
-          exec:
-            command:
-            - psql
-            - -U
-            - postgres
-            - -c
-            - SELECT 1
-          initialDelaySeconds: 15
-          timeoutSeconds: 2
-      nodeSelector:
-        kubernetes.io/os: linux
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
   name: workflow-controller
 spec:
   selector:
@@ -1565,3 +1441,22 @@ spec:
       securityContext:
         runAsNonRoot: true
       serviceAccountName: argo
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: argo-create-minio-bucket
+spec:
+  template:
+    spec:
+      containers:
+      - name: create-minio-bucket
+        image: minio/mc
+        command:
+        - sh
+        - -c
+        - |
+          mc alias set myminio http://minio.minio:80 minio123 minio123
+          mc mb myminio/argo-workflows --ignore-existing
+      restartPolicy: Never
+  backoffLimit: 4

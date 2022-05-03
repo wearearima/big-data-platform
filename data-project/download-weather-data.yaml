@@ -4,7 +4,7 @@ metadata:
   generateName: weather-data-
 spec:
   entrypoint: main
-  # hen runninng 'argo submit', these parameters can be overridden
+  # when runninng 'argo submit', these parameters can be overridden
   # -p start-decade=175 -p end-decade=202
   arguments:
     parameters:
@@ -12,17 +12,12 @@ spec:
         value: 176
       - name: end-decade
         value: 179
-
   templates:
   - name: main
     dag:
       tasks:
-      - name: create-bucket
-        template: create-temp-bucket
       - name: get-weather-data
         template: download-weather-data
-        dependencies: 
-          - create-bucket
         arguments:
           parameters:
           - name: decade
@@ -32,8 +27,6 @@ spec:
           end: "{{ workflow.parameters.end-decade}}"
       - name: get-station-data
         template: download-station-data
-        dependencies: 
-          - create-bucket
       - name: reduce-data
         dependencies:
           - get-weather-data
@@ -46,33 +39,6 @@ spec:
         dependencies:
           - get-station-data
         template: to-postgres2
-      - name: delete-bucket
-        template: delete-temp-bucket
-        dependencies:
-          - send-to-postgres
-          - send-to-postgres2
-
-
-  # TO DO: can I config minio just once?
-
-  # these templates create and delete a temporary minio bucket to store
-  # the downloaded artifacts 
-  - name: create-temp-bucket
-    script:
-      image: minio/mc 
-      command: [sh]
-      source: |
-        echo "setting up credentials..."
-        mc alias set myminio http://minio.minio:80 minio123 minio123
-        echo "creating bucket..."
-        mc mb myminio/{{ workflow.name }}
-  - name: delete-temp-bucket
-    script:
-      image: minio/mc 
-      command: [sh]
-      source: |
-        mc alias set myminio http://minio.minio:80 minio123 minio123
-        mc rb myminio/{{ workflow.name }} --force 
 
 
   # Downloads the given decade in a compressed folder in minio
@@ -91,17 +57,7 @@ spec:
       - name: downloaded-data 
         path: /tmp/weather-data
         s3:
-          endpoint: minio.minio:80
-          # using tls
-          insecure: true
-          bucket: "{{ workflow.name }}"
           key: "{{workflow.name}}/{{ inputs.parameters.decade }}.tgz"
-          accessKeySecret:
-            name: minio-secret
-            key: user
-          secretKeySecret:
-            name: minio-secret
-            key: password
 
   # Downloads weather station info
   - name: download-station-data
@@ -117,17 +73,7 @@ spec:
       - name: downloaded-data 
         path: /tmp/weather-data
         s3:
-          endpoint: minio.minio:80
-          # using tls
-          insecure: true
-          bucket: "{{ workflow.name }}"
           key: "{{ workflow.name }}/station-data.tgz"
-          accessKeySecret:
-            name: minio-secret
-            key: user
-          secretKeySecret:
-            name: minio-secret
-            key: password
 
   
   # Reads all downloaded data and puts all csv files together
@@ -137,16 +83,7 @@ spec:
         - name: downloaded-data
           path: /tmp/downloaded-data
           s3:
-            endpoint: minio.minio:80
-            insecure: true
-            bucket: "{{workflow.name}}"
             key: "{{workflow.name}}"
-            accessKeySecret:
-              name: minio-secret
-              key: user
-            secretKeySecret:
-              name: minio-secret
-              key: password
     script:
       image: danasca/aws-cli
       imagePullPolicy: Always
@@ -160,17 +97,7 @@ spec:
         - name: downloaded-data 
           path: /tmp/weather-data
           s3:
-            endpoint: minio.minio:80
-            # using tls
-            insecure: true
-            bucket: "{{workflow.name}}"
             key: "{{workflow.name}}/final-data/weather-data.tgz"
-            accessKeySecret:
-              name: minio-secret
-              key: user
-            secretKeySecret:
-              name: minio-secret
-              key: password
 
   # Sends weather data to postgres
   - name: to-postgres
@@ -179,29 +106,7 @@ spec:
         - name: weather-data
           path: /tmp/weather-data
           s3:
-            endpoint: minio.minio:80
-            insecure: true
-            bucket: "{{ workflow.name }}"
             key: "{{ workflow.name }}/final-data/weather-data.tgz"
-            accessKeySecret:
-              name: minio-secret
-              key: user
-            secretKeySecret:
-              name: minio-secret
-              key: password
-        - name: station-data
-          path: /tmp/station-data
-          s3:
-            endpoint: minio.minio:80
-            insecure: true
-            bucket: "{{ workflow.name }}"
-            key: "{{workflow.name}}/station-data.tgz"
-            accessKeySecret:
-              name: minio-secret
-              key: user
-            secretKeySecret:
-              name: minio-secret
-              key: password
     script:
       image: postgres:14.2
       command: [bash]
@@ -231,16 +136,7 @@ spec:
         - name: station-data
           path: /tmp/station-data
           s3:
-            endpoint: minio.minio:80
-            insecure: true
-            bucket: "{{ workflow.name }}"
             key: "{{workflow.name}}/station-data.tgz"
-            accessKeySecret:
-              name: minio-secret
-              key: user
-            secretKeySecret:
-              name: minio-secret
-              key: password
     script:
       image: postgres:14.2
       command: [bash]

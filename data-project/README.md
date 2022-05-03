@@ -21,9 +21,9 @@ argo submit -n argo --watch download-weather-data.yaml -p start-decade=175 -p en
 This workflow will also download information about the stations where the weather observations are registered.
 
 **Falta:**
-- Borrar bucket temporal si el workflow falla
 - Enviar datos al data lake también
 - Configurar el paralelismo máximo
+- Borrar carpeta de minio
 
 
 ## Accessing the data through the Trino CLI

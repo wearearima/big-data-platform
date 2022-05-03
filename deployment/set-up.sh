@@ -37,4 +37,4 @@ kubectl apply -f trino-cli.yaml
 # --------------
 
 kubectl create ns argo
-kubectl apply -n argo -f argo-quick-start.yaml
+kubectl apply -n argo -f argo.yaml
