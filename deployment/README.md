@@ -271,8 +271,6 @@ INSERT INTO iceberg.trino.people VALUES (...);
 
 Install Argo on its own namespace, following the quickstart from [here](https://argoproj.github.io/argo-workflows/quick-start/).
 
-**TO DO: cambiar quick start para que no instale su propio minio y postgres, y conectarlo a los que ya tenemos**
-
 ```
 kubectl create ns argo
 kubectl apply -n argo -f argo.yaml
