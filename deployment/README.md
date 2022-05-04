@@ -104,7 +104,7 @@ Postgres, Hive Metastore, Trino and Argo Workflows.*
 
 We will use Postgres as a database for storing data, but we will also need it to provide databases for Superset, [Hive Metastore](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+3.0+Administration#AdminManualMetastore3.0Administration-RunningtheMetastoreWithoutHive) and Argo. Hive Metastore is a tool necessary for managing Iceberg tables.
 
-We will install Postgres through [Kubegres](https://www.kubegres.io/), a Kubernetes operator allowing to deploy Postgres with data replication and failover enabled out-of-the box.
+We will install Postgres through [Kubegres](https://www.kubegres.io/), a Kubernetes operator allowin to deploy Postgres with data replication and failover enabled out-of-the box.
 
 Again, we will be using Kind's default storage class. If this was not the case, additional configuration steps would be necessary.
 
@@ -178,7 +178,7 @@ kubectl apply -f hive-metastore-deployment.yaml
 kubectl expose deployment/hive-metastore 
 ```
 
-** TO:DO: Solo tiene una réplica. No sé si habría que hacerlo de otra forma.**
+**TO DO: Solo tiene una réplica. No sé si habría que hacerlo de otra forma.**
 
 ### 5. Install Trino
 
