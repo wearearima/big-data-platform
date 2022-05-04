@@ -99,10 +99,10 @@ Alternatively, all minio tenants can be managed from the Minio operator directly
 
 ### 3. Install PostgreSQL
 
-*NOTE: You can follow the steps that follow or, alternatively, simply run `set-up.sh` to install
-Postgres, Hive Metastore, Trino and Argo Workflows*
+*NOTE: You can follow the steps as explained below or, alternatively, simply run `set-up.sh` to install
+Postgres, Hive Metastore, Trino and Argo Workflows.*
 
-We will use Postgres as a database for storing data, but we will also need it to provide databases for Superset and [Hive Metastore](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+3.0+Administration#AdminManualMetastore3.0Administration-RunningtheMetastoreWithoutHive). Hive Metastore is a tool necessary for managing Iceberg tables.
+We will use Postgres as a database for storing data, but we will also need it to provide databases for Superset, [Hive Metastore](https://cwiki.apache.org/confluence/display/Hive/AdminManual+Metastore+3.0+Administration#AdminManualMetastore3.0Administration-RunningtheMetastoreWithoutHive) and Argo. Hive Metastore is a tool necessary for managing Iceberg tables.
 
 We will install Postgres through [Kubegres](https://www.kubegres.io/), a Kubernetes operator allowing to deploy Postgres with data replication and failover enabled out-of-the box.
 
@@ -119,7 +119,6 @@ kubectl apply -f postgres-init.yaml
 kubectl apply -f postgres.yaml 
 
 kubectl get pods -w
-
 ```
 
 The Secret [postgres-secret.yaml](postgres-secret.yaml) contains the secrets for all the databases that will be created on our Postgres cluster. 
@@ -154,9 +153,7 @@ kubectl delete kubegres postgres
 
 ### 4. Install Hive Metastore
 
-First create the following ConfigMaps, that store configuration information for Hive Metastore.
-
-**TO DO: No sé si tendrían que ser secretos, porque tienen las contraseñas de postgres y de minio. La otra opción sería crear imágenes con variables de entorno, y generar estos ficheros con las contraseñas, etc. al iniciar el contenedor**
+First create the following Secrets, that store configuration information for Hive Metastore.
 
 ```
 kubectl apply -f hive-metastore-core-config.yaml 
@@ -170,7 +167,7 @@ kubectl apply -f hive-metastore-init-db.yaml
 kubectl wait --for=condition=complete job/init-hms-db 
 ```
 
-If the job finishes successfully, it can be deleted (the job and the pod)
+If the job finishes successfully, it can be deleted (the job and the pod).
 
 
 Now we can deploy hive-metastore and expose it. It will be available internally on `hive-metastore.default:9083`.
@@ -235,7 +232,6 @@ SHOW CATALOGS;
 SHOW SCHEMAS FROM postgres;
 SHOW SCHEMAS FROM minio;
 SHOW SCHEMAS FROM iceberg;
-
 ```
 
 ##### Examples

@@ -31,11 +31,11 @@ spec:
             - containerPort: 9083
       volumes:
         - name: metastore-site
-          configMap:
-            name: metastore-site-config
+          secret:
+            secretName: metastore-site-config
         - name: core-site
-          configMap:
-            name: metastore-core-config
+          secret:
+            secretName: metastore-core-config
 
 
 
