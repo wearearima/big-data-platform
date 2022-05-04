@@ -6,17 +6,20 @@ We will be using [NOAA Global Historical Climatology Network Daily](https://regi
 
 We will download the data from its Amazon bucket and send it to our Postgres instance.
 
-The workflow `download-weather-data.yaml` can be run with parameters, to indicate which decade span one wishes to download. For instance, the following command will download all the files for the years [1750, 1751, 1752, ..., 1778, 1779] if they are present.
+The workflow `download-weather-data.yaml` can be run with parameters, to indicate which decade span one wishes to download. For instance, the following command will download all the files for the years [1750, 1751, 1752, ..., 1778, 1779] if they are present. 
+This workflow will also download information about the stations where the weather observations are registered.
 
 ```
 argo submit -n argo --watch download-weather-data.yaml -p start-decade=175 -p end-decade=177
 ```
 
-This workflow will also download information about the stations where the weather observations are registered.
+It is an example of a workflow organized as a DAG that uses input parameters, parallelism and passes artifacts from one step to the next. It shows how to configure each step with the script that needs to run, without the need to create an image.
+
+Argo Workflows provides a good set of examples to showcase most of its features [here](https://github.com/argoproj/argo-workflows/tree/master/examples).
 
 **Falta:**
-- Enviar datos al data lake también?
-- Borrar carpeta de minio
+- Borrar carpeta de minio? se borrará automáticamente después de un tiempo? Mirar
+
 
 
 ## Accessing the data through the Trino CLI
