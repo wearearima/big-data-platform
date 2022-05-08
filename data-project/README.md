@@ -21,8 +21,7 @@ Argo Workflows provides a good set of examples to showcase most of its features 
 - Borrar carpeta de minio? se borrará automáticamente después de un tiempo? Mirar
 
 
-
-## Accessing the data through the Trino CLI
+### Accessing the data through the Trino CLI
 
 To access de cli:
 
@@ -60,7 +59,7 @@ weather_data where element in ('TMIN', 'TMAX');
 ```
 
 
-## Accessing the data through Superset
+### Accessing the data through Superset
 
 Port-forward the Superset service, and access with credentials "admin"/"admin".
 
@@ -85,6 +84,16 @@ If the website fails, check that the port-forward is still running.
 
 
 
+## Java: Spring Batch and Trino through JDBC
 
+The folder spring-batch-trino-demo contains a simple Spring Batch program that sends data to Minio (as Iceberg tables) through the Trino connector. It has an associated workflow (`spring-batch-trino-demo.yaml`), which is also an example of embedded DAGs in Argo Workflows.
+
+While creating this example, we realized that this is not an appropriate way of loading huge amounts of data through Trino. The program is very slow, because **[batch insert not supported](https://github.com/trinodb/trino/issues/5913) by the Trino JDBC driver**. It would be faster to copy the table to S3/Minio from an existing csv (**TO DO**).
+
+However, it still serves as an example of using Trino through its JDBC driver.
+
+```
+argo submit -n argo --watch spring-batch-trino-demo.yaml -p start-decade=175 -p end-decade=177
+```
 
 

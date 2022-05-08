@@ -1,0 +1,92 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: spring-batch-trino-demo
+spec:
+  entrypoint: main
+  # when runninng 'argo submit', these parameters can be overridden
+  # -p start-decade=175 -p end-decade=202
+  arguments:
+    parameters:
+      - name: start-decade
+        value: 176
+      - name: end-decade
+        value: 177
+  templates:
+  - name: main
+    parallelism: 2
+    dag:
+      tasks:
+      - name: create-minio-bucket
+        template: create-minio-weather-bucket
+      - name: download-and-save-data
+        template: download-and-save-weather-data
+        arguments:
+          parameters:
+          - name: decade
+            value: "{{ item }}"
+        withSequence:
+          start: "{{ workflow.parameters.start-decade}}"
+          end: "{{ workflow.parameters.end-decade}}"
+
+  - name: create-minio-weather-bucket
+    script:
+      image: minio/mc 
+      command: [sh]
+      source: |
+        mc alias set myminio http://minio.minio:80 minio123 minio123
+        mc mb myminio/weather --ignore-existing
+
+  - name: download-and-save-weather-data
+    inputs:
+      parameters:
+        - name: decade
+    dag:
+      tasks:
+        - name: download-data
+          template: download-weather-data
+          arguments:
+            parameters:
+            - name: decade
+              value: "{{inputs.parameters.decade}}"
+        - name: batch-load-data
+          template: batch-load-weather-data
+          dependencies:
+            - download-data
+          arguments:
+            artifacts:
+              - name: weather-data
+                from: "{{tasks.download-data.outputs.artifacts.downloaded-data}}"
+
+  - name: download-weather-data
+    inputs:
+      parameters:
+      - name: decade
+    script:
+      image: danasca/aws-cli
+      command: [bash]
+      source: |
+        aws s3 sync --no-sign-request s3://noaa-ghcn-pds/csv.gz/ /tmp/weather-data/ --exclude "*"  --include "{{ inputs.parameters.decade }}*.csv.gz"
+        gzip -d /tmp/weather-data/*.csv.gz
+    outputs:
+      artifacts:
+      - name: downloaded-data 
+        path: /tmp/weather-data
+        s3:
+          key: "{{ inputs.parameters.decade }}.tgz"
+  - name: batch-load-weather-data
+    inputs:
+      artifacts:
+      - name: weather-data
+        path: /tmp/weather-yearly/
+    container:
+      image: danasca/spring-batch-trino
+      imagePullPolicy: Always
+      command: [java]
+      args: ["-jar", "/spring-batch-trino-demo.jar", 
+             "--trino.url=jdbc:trino://trino.default:8080/iceberg?user=trino&SSL=false",
+             "--observations.src.path=file:/tmp/weather-yearly/*.csv"]
+
+
+
+        
