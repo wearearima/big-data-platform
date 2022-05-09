@@ -54,6 +54,9 @@ spec:
           dependencies:
             - download-data
           arguments:
+            parameters:
+              - name: decade
+                value: "{{inputs.parameters.decade}}"
             artifacts:
               - name: weather-data
                 from: "{{tasks.download-data.outputs.artifacts.downloaded-data}}"
@@ -76,6 +79,8 @@ spec:
           key: "{{ inputs.parameters.decade }}.tgz"
   - name: batch-load-weather-data
     inputs:
+      parameters:
+      - name: decade
       artifacts:
       - name: weather-data
         path: /tmp/weather-yearly/
@@ -83,9 +88,11 @@ spec:
       image: danasca/spring-batch-trino
       imagePullPolicy: Always
       command: [java]
+      # params without -- will be used as job params
       args: ["-jar", "/spring-batch-trino-demo.jar", 
              "--trino.url=jdbc:trino://trino.default:8080/iceberg?user=trino&SSL=false",
-             "--observations.src.path=file:/tmp/weather-yearly/*.csv"]
+             "--observations.src.path=file:/tmp/weather-yearly/*.csv",
+             "decade={{inputs.parameters.decade}}"]
 
 
 
