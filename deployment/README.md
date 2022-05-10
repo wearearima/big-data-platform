@@ -1,6 +1,21 @@
+# Table of Contents
+
+1. [Prerequisites](#prerequisites)
+2. [Installation:](#installation)
+	1. [Cluster set-up](#1-set-up-the-cluster)
+	2. [Minio](#2-install-minio)
+	3. [PostgreSQL](#3-install-postgresql)
+	4. [Hive Metastore](#4-install-hive-metastore)
+	5. [Trino](#5-install-trino)
+	6. [Argo Workflows](#6-install-argo-workflows)
+	7. [Superset](#7-install-superset)
+	8. [Pinot](#8-install-pinot)
+	9. [Datahub](#9-install-datahub)
+
+
 # How to deploy 
 
-## Prerrequisites
+## Prerequisites
 
 1. In order to try the architecture locally, we will use [Kind](https://kind.sigs.k8s.io/), a tool for running Kubernetes clusters using Docker containers as nodes. Docker should be configured with at least 8GB memory for Superset or Datahub to install and run properly.
 
@@ -369,6 +384,8 @@ We will install a Pinot cluster with two replicas of servers, brokers and contro
 The number of replicas and the storage size of each replica can be configured via `pinot-values.yaml`.  In a production cluster, it would be better to have more replicas (at least three) of each cluster component.
 
 **TODO: Organize pv**
+**TODO: Add this to set-up.sh and install before superset**
+**TODO: Example of joining Pinot tables with Trino**
 
 ```
 kubectl add -f persistent-volumes.yaml
