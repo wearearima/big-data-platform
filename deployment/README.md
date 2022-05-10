@@ -13,9 +13,7 @@
 	9. [Datahub](#9-install-datahub)
 
 
-# How to deploy 
-
-## Prerequisites
+# Prerequisites
 
 1. In order to try the architecture locally, we will use [Kind](https://kind.sigs.k8s.io/), a tool for running Kubernetes clusters using Docker containers as nodes. Docker should be configured with at least 8GB memory for Superset or Datahub to install and run properly.
 
@@ -23,11 +21,11 @@
 
 3. In order to be able to install some of the programs in the Kubernetes cluster, you will need [helm](https://helm.sh/) and [krew](https://krew.sigs.k8s.io/docs/user-guide/setup/install/).
 
-## Installation
+# Installation
 
 Run everything from this folder.
 
-### 1. Set up the cluster
+## 1. Set up the cluster
 
 From the current folder as working directory run
 
@@ -44,7 +42,7 @@ In order to stop and delete the cluster, do:
 kind delete cluster
 ```
 
-### 2. Install Minio
+## 2. Install Minio
 
 First, create a namespace for Minio's deployment and prepare persistent volumes. Then, install [Minio operator](https://github.com/minio/operator) using krew.
 
@@ -92,7 +90,7 @@ Once the minio deployment is ready, you can stop the proxy for the operator.
 This Minio tenant can be removed through the operator or by deleting its namespace (`kubectl delete ns minio`).
 
 
-#### Access Minio
+### Access Minio
 
 Now Minio is deployed in the namespace `minio`. Kubernetes internal apps can access it through `minio.minio:80`, with the admin user *minio123* and password *minio123*.
 
@@ -112,7 +110,7 @@ Alternatively, all minio tenants can be managed from the Minio operator directly
 
 
 
-### 3. Install PostgreSQL
+## 3. Install PostgreSQL
 
 *NOTE: You can follow the steps as explained below or, alternatively, simply run `set-up.sh` to install
 Postgres, Hive Metastore, Trino and Argo Workflows.*
@@ -144,7 +142,7 @@ The file [postgres.yaml](postgres.yaml) is a Kubegres resouce that containes the
 
 **TO DO: ¿INSTALO POSTGRES EN SU PROPIO NAMESPACE TAMBIÉN?  AHORA ESTÁ EN DEFAULT?**
 
-#### Access Posgres
+### Access Posgres
 
 The Postgres service will be avaible for internal applications through `postgres.default:5432`.
 
@@ -158,7 +156,7 @@ kubectl port-forward postgres-1-0 5432:5432
 
 See section 6 [here](https://www.kubegres.io/doc/getting-started.html) to understand the services that were created and how they relate to each other.
 
-#### Delete the postgres cluster
+### Delete the postgres cluster
 
 If you want to delete the Postgres cluster that we just created, run:
 
@@ -166,7 +164,7 @@ If you want to delete the Postgres cluster that we just created, run:
 kubectl delete kubegres postgres
 ```
 
-### 4. Install Hive Metastore
+## 4. Install Hive Metastore
 
 First create the following Secrets, that store configuration information for Hive Metastore.
 
@@ -195,7 +193,7 @@ kubectl expose deployment/hive-metastore
 
 **TO DO: Solo tiene una réplica. No sé si habría que hacerlo de otra forma.**
 
-### 5. Install Trino
+## 5. Install Trino
 
 We will install Trino through its Helm charts.
 
@@ -209,7 +207,7 @@ helm install trino -f trino-values.yaml ./trino
 **TO DO when new  version of helm chart is released: I changed the helm charts to add a startup probe. When new version of trino helm
 charts is released (v 8.0), we will be able to fix the problem of extremely long start-up time through the trino-values.yaml (I think)**
 
-#### Access Trino
+### Access Trino
 
 Install a pod to access the [Trino CLI](https://trino.io/docs/current/installation/cli.html)
 
@@ -233,7 +231,7 @@ You can log in with any username.
 
 The UI can be useful for accessing to the error logs when a query fails.
 
-##### Check the connections
+#### Check the connections
 
 After starting the Trino CLI (`
 kubectl exec -it pod/trino-cli -- trino --server trino:8080`), try these commands to check that connections were established successfully to the databases.
@@ -249,7 +247,7 @@ SHOW SCHEMAS FROM minio;
 SHOW SCHEMAS FROM iceberg;
 ```
 
-##### Examples
+#### Examples
 
 Queries: https://trino.io/docs/current/sql.html
 
@@ -278,7 +276,7 @@ CREATE TABLE iceberg.trino.people (
 INSERT INTO iceberg.trino.people VALUES (...);
 ```
 
-### 6. Install Argo Workflows
+## 6. Install Argo Workflows
 
 Install Argo on its own namespace, following the quickstart from [here](https://argoproj.github.io/argo-workflows/quick-start/).
 
@@ -329,7 +327,7 @@ You can also see all the pods by usingn `kubectl get pods` in the argo namespace
 
 
 
-### 7. Install Superset
+## 7. Install Superset
 
 ```
 kubectl create ns superset
@@ -339,7 +337,7 @@ helm upgrade --install --values superset-values.yaml -n superset superset supers
 
 Even if you get a message saying "Error: failed post-install: timed out waiting for the condition", Superset will get installed eventually.
 
-#### Access and connect to databases 
+### Access and connect to databases 
 
 Access at localhost:8088 with user and password "admin".
 
@@ -353,7 +351,7 @@ You can connect to Postgres through a Postgres connection or through a Trino con
 
 The advantadge of connecting through Trino is that we can run queries across different databases. Moreover, if we only use Trino, we can manage access to the data in one central location.
 
-##### Setting up a database connection with Trino
+#### Setting up a database connection with Trino
 
 Go to Data > Databases and click on **+DATABASE** on the top right corner.
 
@@ -377,7 +375,7 @@ In the advanced config, check the boxes that will allow you to manipulate data t
 ![superset-advanced-config](img/superset-config-advanced.png "Trino through Superset: advanced configuration")
 
 
-### 8. Install Pinot
+## 8. Install Pinot
 
 We will install a Pinot cluster with two replicas of servers, brokers and controllers. You can read more about Pinot's architecture [here](https://docs.pinot.apache.org/basics/architecture). Controllers and servers will only use 1GB of storage.
 
@@ -402,12 +400,12 @@ helm uninstall pinot -n pinot
 kubectl delete ns pinot
 ```
 
-#### Loading and accessing data
+### Loading and accessing data
 
 
 
 
-### 9. Install Datahub
+## 9. Install Datahub
 
 **NOTA: Yo no puedo he podido instalar Datahub, así que no lo he podido probar.**
 
