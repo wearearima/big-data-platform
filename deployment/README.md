@@ -362,7 +362,35 @@ In the advanced config, check the boxes that will allow you to manipulate data t
 ![superset-advanced-config](img/superset-config-advanced.png "Trino through Superset: advanced configuration")
 
 
-### 8. Install Datahub
+### 8. Install Pinot
+
+We will install a Pinot cluster with two replicas of servers, brokers and controllers. You can read more about Pinot's architecture [here](https://docs.pinot.apache.org/basics/architecture). Controllers and servers will only use 1GB of storage.
+
+The number of replicas and the storage size of each replica can be configured via `pinot-values.yaml`.  In a production cluster, it would be better to have more replicas (at least three) of each cluster component.
+
+**TODO: Organize pv**
+
+```
+kubectl add -f persistent-volumes.yaml
+kubectl create ns pinot
+helm repo add pinot https://raw.githubusercontent.com/apache/pinot/master/kubernetes/helm
+helm install pinot pinot/pinot -n pinot --values pinot-values.yaml
+
+```
+
+To remove this installation:
+
+```
+helm uninstall pinot -n pinot
+kubectl delete ns pinot
+```
+
+#### Loading and accessing data
+
+
+
+
+### 9. Install Datahub
 
 **NOTA: Yo no puedo he podido instalar Datahub, así que no lo he podido probar.**
 
