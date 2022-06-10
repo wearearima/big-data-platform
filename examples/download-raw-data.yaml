@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: download-raw-weather-data-
+spec:
+  entrypoint: main
+  # when runninng 'argo submit', these parameters can be overridden
+  # -p start-decade=195 -p end-decade=196
+  arguments:
+    parameters:
+      - name: start-decade
+        value: 191
+      - name: end-decade
+        value: 195
+  templates:
+    - name: main
+      # a maximum of 5 jobs will run concurrently
+      parallelism: 5
+      dag:
+        tasks:
+          - name: get-weather-data
+            template: download-weather-data
+            arguments:
+              parameters:
+                - name: decade
+                  value: "{{item}}"
+            withSequence:
+              start: "{{ workflow.parameters.start-decade}}"
+              end: "{{ workflow.parameters.end-decade}}"
+          - name: get-station-data
+            template: download-station-data
+
+    # Downloads the given decade in a compressed folder in minio
+    - name: download-weather-data
+      inputs:
+        parameters:
+          - name: decade
+      script:
+        image: danasca/aws-cli
+        command: [bash]
+        source: |
+          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/csv.gz/ /tmp/weather-data/ --exclude "*"  --include "{{ inputs.parameters.decade }}*.csv.gz"
+          gzip -d /tmp/weather-data/*.csv.gz
+      outputs:
+        artifacts:
+          - name: downloaded-data
+            path: /tmp/weather-data
+            s3:
+              key: "weather-data/{{ inputs.parameters.decade }}.tgz"
+
+    # Downloads weather station info and country list
+    - name: download-station-data
+      script:
+        image: danasca/aws-cli
+        imagePullPolicy: Always
+        command: [bash]
+        source: |
+          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-stations.txt"
+          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-countries.txt"
+      outputs:
+        artifacts:
+          - name: downloaded-data
+            path: /tmp/weather-data
+            s3:
+              key: "weather-data/station-data.tgz"
