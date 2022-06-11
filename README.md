@@ -11,7 +11,9 @@ The blog posts can be found here:
 
 See the [deployment](deployment/) folder for instructions on how to install the tools on a Kubernetes cluster, and the [examples](examples/) folder for basic usage examples.
 
-## Tools
+The [docker-images](docker-images/) folder contains the Dockerfiles used to prepare some  of the images used in the installation and example yamls.
+
+## Current tools
 
 - [Minio](https://min.io/) as object storage,
 - [Postgres](https://www.postgresql.org/), for less resource consuming data projects, and as back-end database for other tools, and
