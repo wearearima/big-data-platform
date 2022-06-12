@@ -119,7 +119,7 @@ kubectl get pods -w
 
 Wait for three pods (postgres-n-0) to be created. 
 
-The Secret ``postgres-secret.yaml` contains the secrets for all the databases that will be created on our Postgres cluster. 
+The Secret `postgres-secret.yaml` contains the secrets for all the databases that will be created on our Postgres cluster. 
 
 The ConfigMap `postgres-init.yaml` contains the initialization script that will create all the databases that we will need as we install additional tools. If desired, it can be modified to perform additional initialization steps.
 
@@ -156,6 +156,8 @@ It will be configured to use our own PostgreSQL and MinIO as storage backends. M
 kubectl create ns argo
 kubectl apply -n argo -f argo.yaml
 ```
+
+In [argo.yaml](argo.yaml) we configure Argo Workflows to work with our current PostgreSQL and MinIO instances. Additionally, it contains a job to create a bucket in MinIO names 'argo-workflows'. Artifacts generated during workflows will be stored here.
 
 Create an admin :
 
