@@ -1,0 +1,57 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: station-data-to-postgres-
+spec:
+  entrypoint: main
+  templates:
+    - name: main
+      # a maximum of 5 jobs will run concurrently
+      parallelism: 5
+      dag:
+        tasks:
+          - name: ingest-country-codes
+            template: ingest-country-codes
+          - name: ingest-station-data
+            template: ingest-station-data
+    - name: ingest-country-codes
+      inputs:
+        artifacts:
+          - name: station-data
+            path: /tmp/station-data
+            s3:
+              key: "weather-data/station-data.tgz"
+      script:
+        image: postgres:14.2
+        command: [bash]
+        source: |
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS countries (
+          id VARCHAR(2),
+          name VARCHAR(255));"
+          cut -c1-2,4- --output-delimiter=";" /tmp/station-data/ghcnd-countries.txt >countries.csv
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy countries from countries.csv
+          DELIMITER ';';"
+
+    - name: ingest-station-data
+      inputs:
+        artifacts:
+          - name: station-data
+            path: /tmp/station-data
+            s3:
+              key: "weather-data/station-data.tgz"
+      script:
+        image: postgres:14.2
+        command: [bash]
+        source: |
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS stations (
+          id VARCHAR(11),
+          lat REAL,
+          lon REAL,
+          elevation REAL,
+          state VARCHAR(2),
+          name VARCHAR(30)
+          );"
+          cut -c1-11,13-20,22-30,32-37,39-40,42-71 --output-delimiter='%' /tmp/station-data/ghcnd-stations.txt >stations.csv
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy stations 
+          FROM 'stations.csv'
+          DELIMITER '%';"

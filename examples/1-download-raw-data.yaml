@@ -19,7 +19,7 @@ spec:
       dag:
         tasks:
           - name: get-weather-data
-            template: download-weather-data
+            template: get-weather-data
             arguments:
               parameters:
                 - name: decade
@@ -28,10 +28,10 @@ spec:
               start: "{{ workflow.parameters.start-decade}}"
               end: "{{ workflow.parameters.end-decade}}"
           - name: get-station-data
-            template: download-station-data
+            template: get-station-data
 
     # Downloads the given decade in a compressed folder in minio
-    - name: download-weather-data
+    - name: get-weather-data
       inputs:
         parameters:
           - name: decade
@@ -49,7 +49,7 @@ spec:
               key: "weather-data/{{ inputs.parameters.decade }}.tgz"
 
     # Downloads weather station info and country list
-    - name: download-station-data
+    - name: get-station-data
       script:
         image: danasca/aws-cli
         imagePullPolicy: Always
