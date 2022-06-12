@@ -1,0 +1,180 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: download-raw-weather-data-
+spec:
+  entrypoint: main
+  # when runninng 'argo submit', these parameters can be overridden
+  # -p start-decade=195 -p end-decade=196
+  arguments:
+    parameters:
+      - name: start-decade
+        value: 191
+      - name: end-decade
+        value: 192
+  templates:
+    - name: main
+      # a maximum of 5 containers will run concurrently
+      parallelism: 5
+      dag:
+        tasks:
+          - name: get-station-data
+            template: get-station-data
+          - name: get-and-ingest-weather-data
+            template: get-and-ingest-weather-data
+            arguments:
+              parameters:
+                - name: decade
+                  value: "{{item}}"
+            withSequence:
+              start: "{{ workflow.parameters.start-decade}}"
+              end: "{{ workflow.parameters.end-decade}}"
+          - name: ingest-country-codes
+            template: ingest-country-codes
+            dependencies:
+              - get-station-data
+            arguments:
+              artifacts:
+                - name: station-data
+                  from: "{{tasks.get-station-data.outputs.artifacts.station-data}}"
+          - name: ingest-station-data
+            template: ingest-country-codes
+            dependencies:
+              - get-station-data
+            arguments:
+              artifacts:
+                - name: station-data
+                  from: "{{tasks.get-station-data.outputs.artifacts.station-data}}"
+
+    # Nested dag: each decade will be downloaded and then ingested
+    - name: get-and-ingest-weather-data
+      inputs:
+        parameters:
+          - name: decade
+      dag:
+        tasks:
+          - name: get-weather-data
+            template: get-weather-data
+            arguments:
+              parameters:
+                - name: decade
+                  value: "{{ inputs.parameters.decade }}"
+          - name: ingest-weather-data
+            template: ingest-weather-data
+            arguments:
+              parameters:
+                - name: decade
+                  value: "{{ inputs.parameters.decade }}"
+            dependencies:
+              - get-weather-data
+
+    # Downloads the given decade in a compressed folder in minio
+    - name: get-weather-data
+      inputs:
+        parameters:
+          - name: decade
+      script:
+        image: danasca/aws-cli
+        command: [bash]
+        source: |
+          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/csv.gz/ /tmp/weather-data/ --exclude "*"  --include "{{ inputs.parameters.decade }}*.csv.gz"
+          gzip -d /tmp/weather-data/*.csv.gz
+      outputs:
+        artifacts:
+          - name: "weather-data-{{ inputs.parameters.decade }}"
+            path: /tmp/weather-data
+            s3:
+              key: "weather-data/{{ inputs.parameters.decade }}.tgz"
+
+    # Downloads weather station info and country list
+    - name: get-station-data
+      script:
+        image: danasca/aws-cli
+        imagePullPolicy: Always
+        command: [bash]
+        source: |
+          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-stations.txt"
+          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-countries.txt"
+      outputs:
+        artifacts:
+          - name: station-data
+            path: /tmp/weather-data
+            s3:
+              key: "weather-data/station-data.tgz"
+
+    # Sends country code table to postgres
+    - name: ingest-country-codes
+      inputs:
+        artifacts:
+          - name: station-data
+            path: /tmp/station-data
+      script:
+        image: postgres:14.2
+        command: [bash]
+        source: |
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS countries (
+          id VARCHAR(2),
+          name VARCHAR(255));"
+          cut -c1-2,4- --output-delimiter=";" /tmp/station-data/ghcnd-countries.txt >countries.csv
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy countries from countries.csv
+          DELIMITER ';';"
+
+    # Sends station info to postgres
+    - name: ingest-station-data
+      inputs:
+        artifacts:
+          - name: station-data
+            path: /tmp/station-data
+      script:
+        image: postgres:14.2
+        command: [bash]
+        source: |
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS stations (
+          id VARCHAR(11),
+          lat REAL,
+          lon REAL,
+          elevation REAL,
+          state VARCHAR(2),
+          name VARCHAR(30)
+          );"
+          cut -c1-11,13-20,22-30,32-37,39-40,42-71 --output-delimiter='%' /tmp/station-data/ghcnd-stations.txt >stations.csv
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy stations 
+          FROM 'stations.csv'
+          DELIMITER '%';"
+
+    # Send weather data to postgres
+    - name: ingest-weather-data
+      inputs:
+        parameters:
+          - name: decade
+        artifacts:
+          - name: decade-data
+            path: /tmp/weather-data/
+            s3:
+              key: "weather-data/{{inputs.parameters.decade}}.tgz"
+      # only one container will run at a time
+      synchronization:
+        mutex:
+          name: weather-data-ingestion
+      script:
+        image: postgres:14.2
+        command: [bash]
+        source: |
+          echo $(ls /tmp/weather-data/)
+          psql postgresql://arima:arima12345@postgres.default:5432/data -c "CREATE TABLE IF NOT EXISTS weather_data (
+          id VARCHAR(11),
+          date DATE,
+          element VARCHAR(4),
+          value INTEGER,
+          measurementFlag VARCHAR(1),
+          qualityFlag VARCHAR(1),
+          sourceFlag VARCHAR(1),
+          obsTime VARCHAR(4)
+          );"
+
+          for year in $(ls /tmp/weather-data/*.csv)
+          do 
+            psql postgresql://arima:arima12345@postgres.default:5432/data -c "\copy weather_data 
+            FROM '$year'
+            WITH CSV;"
+          done
