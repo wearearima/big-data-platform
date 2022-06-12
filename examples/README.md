@@ -51,6 +51,6 @@ argo submit -n argo --watch 1-station-data-to-postgres.yaml
 
 Be aware that it can take a long time to run, especially if you download many decades or very recent decades.
 
-If you port-forward Argo Workflows, you will be able to follow the workflow activity as it unfolds, and see the graphical representation fo the DAG.
+If you port-forward Argo Workflows, you will be able to follow the workflow activity as it unfolds, and see the graphical representation of the DAG.
 
 ![argo-ui](img/argo-ui.png)
