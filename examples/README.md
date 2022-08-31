@@ -22,7 +22,7 @@ We've configured the workflow to download each decade separately and in parallel
 This workflow will also download information about the stations where the weather observations are registered, as well as a table of country codes.
 
 ```
-argo submit -n argo --watch 1-download-raw-data.yaml -p start-decade=191 -p end-decade=195
+argo submit -n argo --watch 1-download-raw-data.yaml -p start-decade=181 -p end-decade=180
 ```
 
 It is an example of a workflow that uses input parameters, parallelism and the [script](https://argoproj.github.io/argo-workflows/workflow-concepts/#script) template definition. This option allows us to define simple jobs without the need to create an image; it will be generated for us from the code we pass.
@@ -46,7 +46,7 @@ argo submit -n argo --watch 1-station-data-to-postgres.yaml
 This example showcases a complete workflow. In addition to the features shown in the examples above, it containes embedded DAGs, and it shows how to use artifacts created in one step as input to another one. It can be submitted as before:
 
 ```
-argo submit -n argo --watch 1-station-data-to-postgres.yaml
+argo submit -n argo --watch 1-download-and-send-to-postgres.yaml -p start-decade=180 -p end-decade=181
 ```
 
 Be aware that it can take a long time to run, especially if you download many decades or very recent decades.
