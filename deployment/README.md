@@ -2,7 +2,6 @@
 	- [1.1. Prerequisites](#11-prerequisites)
 	- [1.2. Set up the cluster](#12-set-up-the-cluster)
 	- [1.3. Install Minio](#13-install-minio)
-			- [1.3.0.1. Access and delete Minio](#1301-access-and-delete-minio)
 	- [1.4. Install PostgreSQL](#14-install-postgresql)
 		- [1.4.1. Access Posgres](#141-access-posgres)
 		- [1.4.2. Delete the Postgres cluster](#142-delete-the-postgres-cluster)
@@ -15,11 +14,11 @@
 
 ## 1.1. Prerequisites
 
-1. In order to try the architecture locally, we will use [Kind](https://kind.sigs.k8s.io/), a tool for running Kubernetes clusters using Docker containers as nodes.
+1. In order to try the architecture locally, we will use [Kind](https://kind.sigs.k8s.io/), a tool for running Kubernetes clusters using Docker containers as nodes. Therefore, Docker should be up and running.
 
-2. [Kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl), the Kubernetes command-line tool.
+3. [Kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl), the Kubernetes command-line tool.
 
-3. In order to be able to install some of the programs in the Kubernetes cluster, you will need [helm](https://helm.sh/) and [krew](https://krew.sigs.k8s.io/docs/user-guide/setup/install/).
+4. In order to be able to install some of the programs in the Kubernetes cluster, you will need [helm](https://helm.sh/) and [krew](https://krew.sigs.k8s.io/docs/user-guide/setup/install/).
 
 ## 1.2. Set up the cluster
 
@@ -42,7 +41,7 @@ kind delete cluster
 
 First, create a namespace for Minio's deployment and prepare persistent volumes. Then, install [Minio operator](https://github.com/minio/operator) using krew.
 
-Note that we are using the default storage class provided by Kind. In any other scenario, you might need to create a [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/) and change the `storageClassName` field on [minio-persistent-volumes.yaml](minio-persistent-volumes.yaml). Moreover, Minio's tool [DirectPV](https://github.com/minio/directpv) can be used to automatically discover and mount drives.**
+Note that we are using the default storage class provided by Kind. In any other scenario, you might need to create a [storage class](https://kubernetes.io/docs/concepts/storage/storage-classes/) and change the `storageClassName` field on [minio-persistent-volumes.yaml](minio-persistent-volumes.yaml). Moreover, **Minio's tool [DirectPV](https://github.com/minio/directpv) can be used to automatically discover and mount drives.**
 
 ```
 kubectl create ns minio
@@ -84,12 +83,11 @@ Once the minio deployment is ready, you can stop the proxy for the operator.
 This Minio tenant can be removed through the operator or by deleting its namespace (`kubectl delete ns minio`).
 
 
-#### 1.3.0.1. Access and delete Minio
+**Access and delete Minio**
 
 Now Minio is deployed in the namespace `minio`. Kubernetes internal apps can access it through `minio.minio:80`, with the admin user *minio123* and password *minio123*.
 
-It can be accessed via Minio [mc](https://docs.min.io/docs/minio-client-complete-guide.html), and also via the [aws cli](https://docs.min.io/docs/aws-cli-with-minio.html).
-
+It can be accessed through the command line via Minio [mc](https://docs.min.io/docs/minio-client-complete-guide.html), and also via the [aws cli](https://docs.min.io/docs/aws-cli-with-minio.html).
 
 Externally, all minio tenants can be delted and managed from the Minio operator. Alternatively,  we can easily access the Minio tenant console directly by port-forwarding one of minio's pods:
 
@@ -117,19 +115,19 @@ kubectl apply -f postgres.yaml
 kubectl get pods -w
 ```
 
-Wait for three pods (postgres-n-0) to be created. 
+Wait for three pods (postgres-*n*-0) to be created. 
 
-The Secret `postgres-secret.yaml` contains the secrets for all the databases that will be created on our Postgres cluster. 
+- The Secret `postgres-secret.yaml` contains the secrets for all the databases that will be created on our Postgres cluster. 
 
-The ConfigMap `postgres-init.yaml` contains the initialization script that will create all the databases that we will need as we install additional tools. If desired, it can be modified to perform additional initialization steps.
+- The ConfigMap `postgres-init.yaml` contains the initialization script that will create all the databases that we will need as we install additional tools. If desired, it can be modified to perform additional initialization steps.
 
-The file `postgres.yaml` is a Kubegres resouce that contains the necessary information to set up the Postgres cluster.
+- The file `postgres.yaml` is a Kubegres resouce that contains the necessary information to set up the Postgres cluster.
 
 ### 1.4.1. Access Posgres
 
 The Postgres service will be avaible for internal applications through `postgres.default:5432`.
 
-Three databases have been created: `hivemetastore`, `superset` and `data`. You can check the access credentials on postgres-secret.yaml.
+Three databases have been created: `hivemetastore`, `superset` and `data`. You can check the access credentials on `postgres-secret.yaml`.
 
 In order to access through localhost, use port-forward:
 
@@ -167,13 +165,15 @@ kubectl create clusterrolebinding YOURNAME-cluster-admin-binding --clusterrole=c
 
 ### 1.5.1. Using Argo Workflows
 
-To access the UI, use port-forward:
+To access the UI, use port-forward and go to: https://localhost:2746.
 
 ```
 kubectl -n argo port-forward deployment/argo-server 2746:2746
 ```
 
-In order to interact with Argo Workflows, you need to install the ARGO CLI following the instructions [here](https://github.com/argoproj/argo-workflows/releases/tag/v3.3.1). After installation you will be able to, among other things:
+In order to interact with Argo Workflows through the command line,
+ you need to install the ARGO CLI following the instructions [here](https://github.com/argoproj/argo-workflows/releases/tag/v3.3.1). 
+ After installation you will be able to, among other things:
 
 - Submit jobs:
 
@@ -204,6 +204,4 @@ In order to interact with Argo Workflows, you need to install the ARGO CLI follo
 
 ## 1.6. Examples 
 
-In the [examples](../examples) folder you'll find two workflows to download raw data into MinIO and save some of this data into our PostgreSQL database. 
-
-Write their names.
+In the [examples](../examples) folder you'll find workflows to download raw data into MinIO and save some of this data into our PostgreSQL database. 
