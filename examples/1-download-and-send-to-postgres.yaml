@@ -9,9 +9,9 @@ spec:
   arguments:
     parameters:
       - name: start-decade
-        value: 191
+        value: 180
       - name: end-decade
-        value: 192
+        value: 182
   templates:
     - name: main
       # a maximum of 5 containers will run concurrently
@@ -38,7 +38,7 @@ spec:
                 - name: station-data
                   from: "{{tasks.get-station-data.outputs.artifacts.station-data}}"
           - name: ingest-station-data
-            template: ingest-country-codes
+            template: ingest-station-data
             dependencies:
               - get-station-data
             arguments:
@@ -77,7 +77,10 @@ spec:
         image: danasca/aws-cli
         command: [bash]
         source: |
-          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/csv.gz/ /tmp/weather-data/ --exclude "*"  --include "{{ inputs.parameters.decade }}*.csv.gz"
+          for num in 0 1 2 3 4 5 6 7 8 9
+            do
+              aws s3 cp --no-sign-request s3://noaa-ghcn-pds/csv.gz/{{inputs.parameters.decade}}${num}.csv.gz /tmp/weather-data/ 
+            done
           gzip -d /tmp/weather-data/*.csv.gz
       outputs:
         artifacts:
@@ -93,8 +96,8 @@ spec:
         imagePullPolicy: Always
         command: [bash]
         source: |
-          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-stations.txt"
-          aws s3 sync --no-sign-request s3://noaa-ghcn-pds/ /tmp/weather-data/ --exclude "*"  --include "ghcnd-countries.txt"
+          aws s3 cp --no-sign-request s3://noaa-ghcn-pds/ghcnd-stations.txt /tmp/weather-data/
+          aws s3 cp --no-sign-request s3://noaa-ghcn-pds/ghcnd-countries.txt /tmp/weather-data/
       outputs:
         artifacts:
           - name: station-data
