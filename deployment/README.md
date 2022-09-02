@@ -1,4 +1,4 @@
-- [1. Post 1: setting up some basic tools](#1-post-1-setting-up-some-basic-tools)
+- [1. Part 1: setting up storage and the workflow orchestrator](#1-part-1-setting-up-storage-and-the-workflow-orchestrator)
 	- [1.1. Prerequisites](#11-prerequisites)
 	- [1.2. Set up the cluster](#12-set-up-the-cluster)
 	- [1.3. Install Minio](#13-install-minio)
@@ -10,7 +10,7 @@
 	- [1.6. Examples](#16-examples)
 
 
-# 1. Post 1: setting up some basic tools 
+# 1. Part 1: setting up storage and the workflow orchestrator
 
 ## 1.1. Prerequisites
 
@@ -59,13 +59,17 @@ kubectl minio proxy -n minio-operator
 
 A JWT token will be printed on the console, which is necessary to log into the operator.
 
-For testing purposes, we will create an unsecured Minio server pool with 2 servers and 4 drives per server. However, keep in mind that:
+For testing purposes, we will create an unsecured Minio server pool with 4 servers and 4 drives per server, as per the official recommendation:
 
 > MinIO recommends a minimum of 4 nodes per server pool with 4 drives per server. With the default erasure code parity setting of EC:4 , this topology can continue serving read and write operations despite the loss of up to 4 drives or one node.
 
 See additional deployment guidelines [here](https://docs.min.io/minio/baremetal/installation/deploy-minio-distributed.html#id5).
 
-Configure the Minio cluster as shown in the pictures. Additionally, you may disable audit logs and monitoring to save resources.
+Configure the Minio cluster as shown in the pictures. 
+In the example, we allocate a total 128 Gi of space; but you can modify this to suit your needs and space restrictions. 
+
+Additionally, since this is just a demo, you may disable audit logs 
+and monitoring to save resources.
 
 
 ![minio-config-1](img/minio-config-1.png "Minio basic config")
