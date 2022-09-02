@@ -10,6 +10,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -31,6 +33,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -52,6 +56,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -96,6 +102,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -117,6 +125,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -138,6 +148,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -159,6 +171,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -180,6 +194,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -201,6 +217,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -222,6 +240,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -243,6 +263,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -264,6 +286,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/ 
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -285,6 +309,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -306,6 +332,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -327,6 +355,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -348,6 +378,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -369,6 +401,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -390,6 +424,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -411,6 +447,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
@@ -432,6 +470,8 @@ spec:
    - ReadWriteOnce
    persistentVolumeReclaimPolicy: Retain
    storageClassName: default
+   local:
+      path: /data/
    nodeAffinity:
       required:
          nodeSelectorTerms:
