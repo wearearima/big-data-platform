@@ -61,7 +61,7 @@ A JWT token will be printed on the console, which is necessary to log into the o
 
 For testing purposes, we will create an unsecured Minio server pool with 4 servers and 4 drives per server, as per the official recommendation:
 
-> MinIO recommends a minimum of 4 nodes per server pool with 4 drives per server. With the default erasure code parity setting of EC:4 , this topology can continue serving read and write operations despite the loss of up to 4 drives or one node.
+> MinIO recommends a minimum of 4 nodes per server pool with 4 drives per server. With the default erasure code parity setting of EC:4, this topology can continue serving read and write operations despite the loss of up to 4 drives or one node.
 
 See additional deployment guidelines [here](https://docs.min.io/minio/baremetal/installation/deploy-minio-distributed.html#id5).
 
@@ -91,9 +91,9 @@ This Minio tenant can be removed through the operator or by deleting its namespa
 
 Now Minio is deployed in the namespace `minio`. Kubernetes internal apps can access it through `minio.minio:80`, with the admin user *minio123* and password *minio123*.
 
-It can be accessed through the command line via Minio [mc](https://docs.min.io/docs/minio-client-complete-guide.html), and also via the [aws cli](https://docs.min.io/docs/aws-cli-with-minio.html).
+We can interact with it through the command line via Minio [mc](https://docs.min.io/docs/minio-client-complete-guide.html), and also via the [aws cli](https://docs.min.io/docs/aws-cli-with-minio.html).
 
-Externally, all minio tenants can be delted and managed from the Minio operator. Alternatively,  we can easily access the Minio tenant console directly by port-forwarding one of minio's pods:
+Externally, all minio tenants can be deleted and managed from the Minio operator. Alternatively,  we can easily access the Minio tenant console directly by port-forwarding one of minio's pods:
 
 ```
 kubectl port-forward -n minio minio-pool-0-0 9090:9090
@@ -159,13 +159,7 @@ kubectl create ns argo
 kubectl apply -n argo -f argo.yaml
 ```
 
-In [argo.yaml](argo.yaml) we configure Argo Workflows to work with our current PostgreSQL and MinIO instances. Additionally, it contains a job to create a bucket in MinIO names 'argo-workflows'. Artifacts generated during workflows will be stored here.
-
-Create an admin :
-
-```
-kubectl create clusterrolebinding YOURNAME-cluster-admin-binding --clusterrole=cluster-admin --user=YOUREMAIL@email.com
-```
+In [argo.yaml](argo.yaml) we configure Argo Workflows to work with our current PostgreSQL and MinIO instances. Additionally, it contains a job to create a bucket in MinIO named 'argo-workflows'. Artifacts generated during workflows will be stored here.
 
 ### 1.5.1. Using Argo Workflows
 
@@ -191,7 +185,7 @@ In order to interact with Argo Workflows through the command line,
 	```
 	argo logs -n argo @latest
 	```
-  You can also see all the pods by using `kubectl get pods` in the `argo` namespace. The logs of the pods might beku more complete through kubectl.
+  You can also see all the pods by using `kubectl get pods` in the `argo` namespace. The logs of the pods might be more complete through kubectl.
 
 
 - Terminate the job that is running:

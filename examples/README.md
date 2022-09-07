@@ -31,7 +31,7 @@ this job will download two additional tables:
 
 This job is an example of a workflow that uses input parameters, parallelism and the [script](https://argoproj.github.io/argo-workflows/workflow-concepts/#script) template definition. This option allows us to define simple jobs without the need to create a Docker image.
 
-Paths indicated in the `artifact` sections are relative to MinIO bucket `argo-workflows`. We've configured it like this in `argo.yaml`. 
+Paths indicated in the `artifact` sections are relative to MinIO bucket `argo-workflows`. We've configured it like this in [argo.yaml](../deployment/argo.yaml). 
 
 
 ## 1.2. Example 2: Loading part of the data to PostgreSQL
@@ -51,7 +51,7 @@ This example showcases the complete workflow: downloading the data and sending i
 Of course, the same effect (saving the data to Postgres) could be accomplished in one step without
 saving to MinIO as an intermediary step. We chose this method for illustration purposes.
 
-The workflows can be submitted as before:
+The workflow can be submitted as before:
 
 ```
 argo submit -n argo --watch 1-download-and-send-to-postgres.yaml -p start-decade=195 -p end-decade=198
@@ -59,6 +59,10 @@ argo submit -n argo --watch 1-download-and-send-to-postgres.yaml -p start-decade
 
 Be aware that files corresponding to recent years can be very big.
 
-If you port-forward Argo Workflows, you will be able to follow the workflow activity as it unfolds, see the graphical representation of the DAG and access the logs for each pod, among many other things.
+If you port-forward Argo Workflows, you will be able to access the UI at https://localhost:2746. From there, you can follow the workflow activity as it unfolds, see the graphical representation of the DAG and access the logs for each pod, among many other things.
+
+```
+kubectl -n argo port-forward deployment/argo-server 2746:2746
+```
 
 ![argo-ui](img/argo-ui.png)
