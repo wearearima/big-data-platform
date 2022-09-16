@@ -6,8 +6,8 @@ In those posts we explain the reasoning behind our choice of tools, and introduc
 
 The demo runs on a Kind cluster, and tools are configured without security or with the minimal default security.
 
-The blog posts can be found here:
-   - Link to post 1
+The blog posts (in Spanish) can be found here:
+   - [Persistence](https://blog.arima.eu/2022/09/14/big-data-platform-1.html)
 
 See the [deployment](deployment/) folder for instructions on how to install the tools on a Kubernetes cluster, and the [examples](examples/) folder for basic usage examples.
 
